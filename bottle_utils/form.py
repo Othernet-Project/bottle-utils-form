@@ -244,6 +244,19 @@ class DateField(StringField):
                                         **kwargs)
 
 
+class FileField(Field):
+
+    def parse(self, value):
+        return value
+
+    def render(self):
+        return html.vinput(self.name,
+                           {},
+                           _type='file',
+                           _id=self._id_prefix + self.name,
+                           **self.kwargs)
+
+
 class IntegerField(Field):
 
     def parse(self, value):
