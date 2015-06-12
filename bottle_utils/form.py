@@ -14,9 +14,10 @@ from bottle_utils.i18n import lazy_gettext as _
 
 class ValidationError(Exception):
 
-    def __init__(self, message, params):
+    def __init__(self, message, params, is_form=False):
         self.message = message
         self.params = params
+        self.is_form = False
         super(ValidationError, self).__init__(message)
 
     def __str__(self):
@@ -28,8 +29,13 @@ class ValidationError(Exception):
         return self.render()
 
     def render(self):
-        msg = self.message.format(**self.params)
-        return html.SPAN(html.html_escape(msg), _class=html.ERR_CLS)
+        message_text = self.message.format(**self.params)
+        message = html.html_escape(html.to_unicode(message_text))
+        if self.is_form:
+            return html.UL(html.LI(message, _class=html.FERR_ONE_CLS),
+                           _class=html.FERR_CLS)
+        else:
+            return html.SPAN(html.html_escape(message), _class=html.ERR_CLS)
 
 
 class Label(object):
@@ -435,6 +441,7 @@ class Form(object):
             try:
                 self.validate()
             except ValidationError as exc:
+                exc.is_form = True
                 self._add_error(self, exc)
 
         return not self._has_error
