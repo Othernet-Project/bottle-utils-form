@@ -209,6 +209,16 @@ class PasswordField(StringField):
                            **self.kwargs)
 
 
+class EmailField(StringField):
+
+    def render(self):
+        return html.vinput(self.name,
+                           {},
+                           _type='email',
+                           _id=self._id_prefix + self.name,
+                           **self.kwargs)
+
+
 class TextAreaField(StringField):
 
     def render(self):
