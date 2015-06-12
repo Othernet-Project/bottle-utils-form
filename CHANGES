@@ -1,2 +1,6 @@
 2015-06-11 : v0.1a1 : Initial release
   - Imported code from Librarian
+
+2015-06-12 : v0.1a2 : Minor changes
+  - Added EmailField
+  - Display proper form errors
