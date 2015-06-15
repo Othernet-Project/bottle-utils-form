@@ -219,7 +219,7 @@ class HiddenField(StringField):
 
     def render(self):
         return html.vinput(self.name,
-                           {},
+                           {self.name: self.value},
                            _type='hidden',
                            _id=self._id_prefix + self.name,
                            **self.options)
@@ -229,7 +229,7 @@ class EmailField(StringField):
 
     def render(self):
         return html.vinput(self.name,
-                           {},
+                           {self.name: self.value},
                            _type='email',
                            _id=self._id_prefix + self.name,
                            **self.options)
