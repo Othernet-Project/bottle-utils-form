@@ -138,7 +138,7 @@ class Field(object):
             return super(Field, cls).__new__(cls)
         return DormantField(cls, args, kwargs)
 
-    def __init__(self, label, validators=None, value=None, name=None,
+    def __init__(self, label=None, validators=None, value=None, name=None,
                  **kwargs):
         self.name = name
         self.label = self._label_cls(label, name)
