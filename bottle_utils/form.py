@@ -202,7 +202,7 @@ class StringField(Field):
                            {self.name: self.value},
                            _type='text',
                            _id=self._id_prefix + self.name,
-                           **self.kwargs)
+                           **self.options)
 
 
 class PasswordField(StringField):
@@ -212,7 +212,7 @@ class PasswordField(StringField):
                            {},
                            _type='password',
                            _id=self._id_prefix + self.name,
-                           **self.kwargs)
+                           **self.options)
 
 
 class HiddenField(StringField):
@@ -222,7 +222,7 @@ class HiddenField(StringField):
                            {},
                            _type='hidden',
                            _id=self._id_prefix + self.name,
-                           **self.kwargs)
+                           **self.options)
 
 
 class EmailField(StringField):
@@ -232,7 +232,7 @@ class EmailField(StringField):
                            {},
                            _type='email',
                            _id=self._id_prefix + self.name,
-                           **self.kwargs)
+                           **self.options)
 
 
 class TextAreaField(StringField):
@@ -241,17 +241,17 @@ class TextAreaField(StringField):
         return html.varea(self.name,
                           {self.name: self.value},
                           _id=self._id_prefix + self.name,
-                          **self.kwargs)
+                          **self.options)
 
 
 class DateField(StringField):
 
-    def __init__(self, label, validators=None, value=None, **kwargs):
+    def __init__(self, label, validators=None, value=None, **options):
         validators = [DateValidator()] + list(validators or [])
         super(DateField, self).__init__(label,
                                         validators=validators,
                                         value=value,
-                                        **kwargs)
+                                        **options)
 
 
 class FileField(Field):
@@ -264,7 +264,7 @@ class FileField(Field):
                            {},
                            _type='file',
                            _id=self._id_prefix + self.name,
-                           **self.kwargs)
+                           **self.options)
 
 
 class IntegerField(Field):
@@ -280,7 +280,7 @@ class IntegerField(Field):
                            {self.name: self.value},
                            _type='text',
                            _id=self._id_prefix + self.name,
-                           **self.kwargs)
+                           **self.options)
 
 
 class FloatField(Field):
@@ -296,19 +296,19 @@ class FloatField(Field):
                            {self.name: self.value},
                            _type='text',
                            _id=self._id_prefix + self.name,
-                           **self.kwargs)
+                           **self.options)
 
 
 class BooleanField(Field):
 
     def __init__(self, label, validators=None, value=None, default=False,
-                 **kwargs):
+                 **options):
         self.default = default
         self.expected_value = value
         super(BooleanField, self).__init__(label,
                                            validators=validators,
                                            value=value,
-                                           **kwargs)
+                                           **options)
 
     def parse(self, value):
         if not value or isinstance(value, basestring):
@@ -322,18 +322,18 @@ class BooleanField(Field):
                               data,
                               default=self.default,
                               _id=self._id_prefix + self.name,
-                              **self.kwargs)
+                              **self.options)
 
 
 class SelectField(Field):
 
     def __init__(self, label, validators=None, value=None, choices=None,
-                 **kwargs):
+                 **options):
         self.choices = choices or tuple()
         super(SelectField, self).__init__(label,
                                           validators=validators,
                                           value=value,
-                                          **kwargs)
+                                          **options)
 
     def parse(self, value):
         chosen = unicode(value)
@@ -348,7 +348,7 @@ class SelectField(Field):
                             self.choices,
                             {self.name: self.value},
                             _id=self._id_prefix + self.name,
-                            **self.kwargs)
+                            **self.options)
 
 
 class Form(object):
