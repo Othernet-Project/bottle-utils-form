@@ -4,3 +4,6 @@
 2015-06-12 : v0.1a2 : Minor changes
   - Added EmailField
   - Display proper form errors
+
+2015-06-15 : v0.1a3 : Minor changes
+  - Added FileField
