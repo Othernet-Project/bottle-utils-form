@@ -13,6 +13,9 @@
   - Make field label optional
   - Make additional kwargs passed to field instances accessible under the field.options
 
-2015-06-15 : v0.1a4 : Minor fixes
+2015-06-15 : v0.1a5 : Minor fixes
   - Fix field.options references
   - Fix occasionally failing unittest
+
+2015-06-15 : v0.1a6 : Minor fixes
+  - Allow hidden and email fields to have initial values
