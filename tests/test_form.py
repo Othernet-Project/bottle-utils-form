@@ -217,7 +217,8 @@ class TestForm(object):
         mocked_field = mock.Mock()
         bind.side_effect = lambda x: mocked_field
         form = form_cls({'field1': 1, 'field2': 2})
-        mocked_field.bind_value.assert_has_calls([mock.call(2), mock.call(1)])
+        mocked_field.bind_value.assert_has_calls([mock.call(2), mock.call(1)],
+                                                 any_order=True)
 
     def test_fields(self, form_cls):
         form = form_cls({})
