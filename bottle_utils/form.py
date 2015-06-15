@@ -139,7 +139,7 @@ class Field(object):
         return DormantField(cls, args, kwargs)
 
     def __init__(self, label=None, validators=None, value=None, name=None,
-                 **kwargs):
+                 **options):
         self.name = name
         self.label = self._label_cls(label, name)
         self.validators = validators or []
@@ -147,7 +147,7 @@ class Field(object):
         self.processed_value = None
         self.is_value_bound = False
         self.error = None
-        self.kwargs = kwargs
+        self.options = options
 
     def __str__(self):
         """Calls renderer function"""
