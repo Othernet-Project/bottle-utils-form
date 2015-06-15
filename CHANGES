@@ -7,3 +7,8 @@
 
 2015-06-15 : v0.1a3 : Minor changes
   - Added FileField
+
+2015-06-15 : v0.1a4 : Minor changes
+  - Added HiddenField
+  - Make field label optional
+  - Make additional kwargs passed to field instances accessible under the field.options
