@@ -215,6 +215,16 @@ class PasswordField(StringField):
                            **self.kwargs)
 
 
+class HiddenField(StringField):
+
+    def render(self):
+        return html.vinput(self.name,
+                           {},
+                           _type='hidden',
+                           _id=self._id_prefix + self.name,
+                           **self.kwargs)
+
+
 class EmailField(StringField):
 
     def render(self):
