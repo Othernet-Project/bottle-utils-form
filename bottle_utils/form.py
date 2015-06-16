@@ -270,6 +270,9 @@ class FileField(Field):
 class IntegerField(Field):
 
     def parse(self, value):
+        if value is None:
+            return value
+
         try:
             return int(value)
         except Exception:
@@ -286,6 +289,9 @@ class IntegerField(Field):
 class FloatField(Field):
 
     def parse(self, value):
+        if value is None:
+            return value
+
         try:
             return float(value)
         except Exception:

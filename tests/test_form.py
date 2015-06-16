@@ -133,6 +133,16 @@ class TestStringField(object):
         assert field.parse('str') == 'str'
 
 
+class TestIntegerfield(object):
+
+    def test_parse(self):
+        field = mod.IntegerField(name='alreadybound')
+        assert field.parse(None) is None
+        assert field.parse('321') == 321
+        with pytest.raises(ValueError):
+            field.parse('str')
+
+
 class TestBooleanFieldIntegration(object):
 
     def test_is_valid(self):
