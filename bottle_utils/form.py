@@ -409,6 +409,20 @@ class Form(object):
                 field_instance.bind_value(data.get(field_name))
 
     @property
+    def messages(self):
+        """ Dictionary of all field error messages
+
+        This value maps the field names to error message maps. Field names are
+        mapped to fields' messages property, which maps error type to actual
+        message. This dictionary can also be used to modify the messages
+        because message mappings are not copied.
+        """
+        messages = {}
+        for field_name, field in self.fields.items():
+            messages[field_name] = field.messages
+        return messages
+
+    @property
     def fields(self):
         """Returns a dictionary of all the fields found on the form instance.
         The return value is never cached so dynamically adding new fields to
