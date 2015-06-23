@@ -322,6 +322,16 @@ class TestForm(object):
         validate.assert_called_once_with()
         assert form.error == error
 
+    @mock.patch.object(mod.Field, 'messages')
+    def test_form_error_messages(self, messages, form_cls):
+        form = form_cls({})
+        form.field1.messages = {'foo': 'bar'}
+        form.field2.messages = {'bar': 'baz'}
+        assert form.messages == {
+            'field1': {'foo': 'bar'},
+            'field2': {'bar': 'baz'},
+        }
+
 
 @mock.patch.object(mod, '_')
 def test_form_integration(gettext):

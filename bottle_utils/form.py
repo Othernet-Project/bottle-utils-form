@@ -431,7 +431,7 @@ class Form(object):
         is_form_field = lambda name: isinstance(getattr(self, name), types)
         ignored_attrs = ['fields', 'messages']
         return dict((name, getattr(self, name)) for name in dir(self)
-                    if name in ignored_attrs and is_form_field(name))
+                    if name not in ignored_attrs and is_form_field(name))
 
     def _add_error(self, field, error):
         # if the error is from one of the processors, bind it to the field too
