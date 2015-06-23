@@ -17,7 +17,7 @@ class ValidationError(Exception):
     def __init__(self, message, params, is_form=False):
         self.message = message
         self.params = params
-        self.is_form = False
+        self.is_form = is_form
         super(ValidationError, self).__init__(message)
 
     def __str__(self):
@@ -59,6 +59,10 @@ class Label(object):
 
 
 class Validator(object):
+    messages = {}
+
+    def __init__(self, messages={}):
+        self.messages.update(messages)
 
     def __call__(self, data):
         self.validate(data)
@@ -70,52 +74,48 @@ class Validator(object):
 
 
 class Required(Validator):
-
-    def __init__(self, message=None):
-        self.message = message or _("This field is required.")
+    messages = {
+        'required': _('This field is required'),
+    }
 
     def validate(self, data):
         if not data or isinstance(data, basestring) and not data.strip():
-            raise ValidationError(self.message, {})
+            raise ValidationError('required', {})
 
 
 class DateValidator(Validator):
-
-    def __init__(self, message=None):
-        self.message = message
+    messages = {
+        'date': _('{value} does not look like a valid date'),
+    }
 
     def validate(self, value):
         try:
             return dateutil.parser.parse(value)
-        except ValueError as exc:
-            msg = self.message or _("Invalid date: {0}")
-            raise ValidationError(msg.format(exc), {'value': value})
-        except TypeError as exc:
-            msg = self.message or _("Invalid input.")
-            raise ValidationError(msg, {'value': value})
+        except (TypeError, ValueError) as exc:
+            raise ValidationError('date', {'value': value, 'exc': str(exc)})
 
 
 class InRangeValidator(Validator):
+    messages = {
+        'min_val': _('{value} is too small'),
+        'max_val': _('{value} is too large'),
+    }
 
-    def __init__(self, min_value=None, max_value=None, message=None):
+    def __init__(self, min_value=None, max_value=None, **kwargs):
         self.min_value = min_value
         self.max_value = max_value
-        self.message = message
+        super(self, InRangeValidator).__init__(**kwargs)
 
     def validate(self, value):
         try:
             if self.min_value is not None and self.min_value > value:
-                msg = self.message or _("Input value is too small.")
-                msg = msg.format(min=self.min_value, max=self.max_value)
-                raise ValidationError(msg, {'value': value})
+                raise ValidationError(
+                    'min_val', {'value': value, 'min': self.min_value})
             if self.max_value is not None and self.max_value < value:
-                msg = self.message or _("Input value is too large.")
-                msg = msg.format(min=self.min_value, max=self.max_value)
-                raise ValidationError(msg, {'value': value})
+                raise ValidationError(
+                    'max_val', {'value': value, 'max': self.max_value})
         except Exception:
-            msg = self.message or _("Invalid input.")
-            msg = msg.format(min=self.min_value, max=self.max_value)
-            raise ValidationError(msg, {'value': value})
+            raise ValidationError('generic', {'value': value})
 
 
 class DormantField(object):
@@ -132,6 +132,11 @@ class DormantField(object):
 class Field(object):
     _id_prefix = 'id_'
     _label_cls = Label
+    messages = {
+        # Translators, used as generic error message in form fields, 'value'
+        # should not be translated.
+        'generic': _('{value} is invalid for this field'),
+    }
 
     def __new__(cls, *args, **kwargs):
         if 'name' in kwargs:
@@ -139,7 +144,7 @@ class Field(object):
         return DormantField(cls, args, kwargs)
 
     def __init__(self, label=None, validators=None, value=None, name=None,
-                 **options):
+                 messages={}, **options):
         self.name = name
         self.label = self._label_cls(label, name)
         self.validators = validators or []
@@ -148,6 +153,11 @@ class Field(object):
         self.is_value_bound = False
         self.error = None
         self.options = options
+
+        # Update messages
+        for validator in self.validators:
+            self.messages.update(validator.messages)
+        self.messages.update(messages)
 
     def __str__(self):
         """Calls renderer function"""
@@ -165,7 +175,7 @@ class Field(object):
         try:
             self.processed_value = self.parse(self.value)
         except ValueError as exc:
-            self.error = ValidationError(str(exc), {'value': self.value})
+            self.error = ValidationError('generic', {'value': self.value})
             return False
 
         for validate in self.validators:

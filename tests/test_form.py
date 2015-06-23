@@ -61,8 +61,8 @@ class TestField(object):
                 self.something = something
                 super(CustomField, self).__init__(label, validators, **kwargs)
 
-        field1 = CustomField('label', validators=[1], something='this')
-        field2 = CustomField('label', validators=[1], something='that')
+        field1 = CustomField('label', validators=[], something='this')
+        field2 = CustomField('label', validators=[], something='that')
         bound_field1 = field1.bind('field1')
         bound_field2 = field2.bind('field2')
         assert bound_field1.name == 'field1'
@@ -88,7 +88,7 @@ class TestField(object):
         field.bind_value(value)
         assert not field.is_valid()
         assert isinstance(field.error, mod.ValidationError)
-        assert field.error.message == 'test'
+        assert field.error.message == 'generic'
         assert field.error.params == {'value': value}
 
     @mock.patch.object(mod.Field, 'parse')
@@ -102,6 +102,7 @@ class TestField(object):
     def test_is_valid_validator_success(self, parse):
         parse.side_effect = lambda x: x
         mocked_validator = mock.Mock()
+        mocked_validator.messages = {}
         field = mod.Field('label',
                           name='alreadybound',
                           validators=[mocked_validator])
@@ -113,6 +114,7 @@ class TestField(object):
     def test_is_valid_validator_fail(self, parse):
         parse.side_effect = lambda x: x
         mocked_validator = mock.Mock()
+        mocked_validator.messages = {}
         error = mod.ValidationError('failure', {})
         mocked_validator.side_effect = error
         field = mod.Field('label',
@@ -122,6 +124,19 @@ class TestField(object):
         assert not field.is_valid()
         mocked_validator.assert_called_once_with('test')
         assert field.error == error
+
+    def test_field_collects_validator_messages(self):
+        mocked_validator1 = mock.Mock()
+        mocked_validator1.messages = {'foo': 'bar'}
+        mocked_validator2 = mock.Mock()
+        mocked_validator2.messages = {'bar': 'baz'}
+        field = mod.Field('label',
+                          name='field',
+                          validators=[mocked_validator1, mocked_validator2])
+        assert 'generic' in field.messages
+        assert 'foo' in field.messages
+        assert 'bar' in field.messages
+
 
 
 class TestStringField(object):
