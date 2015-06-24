@@ -9,7 +9,11 @@ import dateutil.parser
 
 from bottle_utils import html
 from bottle_utils.common import basestring, unicode
-from bottle_utils.i18n import lazy_gettext as _
+
+try:
+    from bottle_utils.i18n import lazy_gettext as _
+except ImportError:
+    _ = lambda x: x
 
 
 class ValidationError(Exception):
@@ -294,6 +298,9 @@ class FileField(Field):
 class IntegerField(Field):
 
     def parse(self, value):
+        if value is None:
+            return value
+
         try:
             return int(value)
         except Exception:
@@ -310,6 +317,9 @@ class IntegerField(Field):
 class FloatField(Field):
 
     def parse(self, value):
+        if value is None:
+            return value
+
         try:
             return float(value)
         except Exception:

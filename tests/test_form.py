@@ -147,6 +147,16 @@ class TestStringField(object):
         assert field.parse('str') == 'str'
 
 
+class TestIntegerfield(object):
+
+    def test_parse(self):
+        field = mod.IntegerField(name='alreadybound')
+        assert field.parse(None) is None
+        assert field.parse('321') == 321
+        with pytest.raises(ValueError):
+            field.parse('str')
+
+
 class TestBooleanFieldIntegration(object):
 
     def test_is_valid(self):
@@ -174,9 +184,7 @@ class TestBooleanFieldIntegration(object):
 
 class TestSelectFieldIntegration(object):
 
-    @mock.patch.object(mod, '_')
-    def test_is_valid(self, gettext):
-        gettext.side_effect = lambda x: x
+    def test_is_valid(self):
         choices = (
             (None, '---'),
             (1, 'first'),
@@ -332,9 +340,7 @@ class TestForm(object):
         }
 
 
-@mock.patch.object(mod, '_')
-def test_form_integration(gettext):
-    gettext.side_effect = lambda x: x
+def test_form_integration():
 
     class SomeForm(mod.Form):
         name = mod.StringField('Name', validators=[mod.Required()])
