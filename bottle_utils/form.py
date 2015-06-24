@@ -9,7 +9,11 @@ import dateutil.parser
 
 from bottle_utils import html
 from bottle_utils.common import basestring, unicode
-from bottle_utils.i18n import lazy_gettext as _
+
+try:
+    from bottle_utils.i18n import lazy_gettext as _
+except ImportError:
+    _ = lambda x: x
 
 
 class ValidationError(Exception):
