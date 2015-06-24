@@ -430,12 +430,11 @@ class Form(object):
 
     def _bind(self, data):
         """Binds field names and values to the field instances."""
-        if data is None:
-            return
         for field_name, dormant_field in self.fields.items():
             field_instance = dormant_field.bind(field_name)
             setattr(self, field_name, field_instance)
-            field_instance.bind_value(data.get(field_name))
+            if data is not None:
+                field_instance.bind_value(data.get(field_name))
 
     @property
     def field_messages(self):
