@@ -87,9 +87,9 @@ class TestField(object):
         field = mod.Field('label', name='alreadybound')
         field.bind_value(value)
         assert not field.is_valid()
-        assert isinstance(field.error, mod.ValidationError)
-        assert field.error.message == 'generic'
-        assert field.error.params == {'value': value}
+        assert isinstance(field._error, mod.ValidationError)
+        assert field._error.message == 'generic'
+        assert field._error.params == {'value': value}
 
     @mock.patch.object(mod.Field, 'parse')
     def test_is_valid_no_validators(self, parse):
@@ -123,7 +123,7 @@ class TestField(object):
         field.bind_value('test')
         assert not field.is_valid()
         mocked_validator.assert_called_once_with('test')
-        assert field.error == error
+        assert field._error == error
 
     def test_field_collects_validator_messages(self):
         mocked_validator1 = mock.Mock()
@@ -133,7 +133,6 @@ class TestField(object):
         field = mod.Field('label',
                           name='field',
                           validators=[mocked_validator1, mocked_validator2])
-        assert 'generic' in field.messages
         assert 'foo' in field.messages
         assert 'bar' in field.messages
 
@@ -271,7 +270,7 @@ class TestForm(object):
         mocked_field = mock.Mock()
         mocked_field.value = 3
         error = mod.ValidationError('has error', {'value': 3})
-        mocked_field.error = error
+        mocked_field._error = error
         mocked_field.is_valid.return_value = False
         form = form_cls({'field1': 3})
         fields_dict = {'field1': mocked_field}
@@ -279,7 +278,7 @@ class TestForm(object):
             assert not form.is_valid()
 
         mocked_field.is_valid.assert_called_once_with()
-        assert mocked_field.error == error
+        assert mocked_field._error == error
 
     def test_is_valid_preprocessor_fail(self, form_cls):
         preprocessor = mock.Mock()
@@ -295,7 +294,7 @@ class TestForm(object):
         with mock.patch.object(mod.Form, 'fields', fields_dict):
             assert not form.is_valid()
 
-        assert mocked_field.error == error
+        assert mocked_field._error == error
         assert not mocked_field.is_valid.called
         preprocessor.assert_called_once_with(3)
 
@@ -313,7 +312,7 @@ class TestForm(object):
         with mock.patch.object(mod.Form, 'fields', fields_dict):
             assert not form.is_valid()
 
-        assert mocked_field.error == error
+        assert mocked_field._error == error
         mocked_field.is_valid.assert_called_once_with()
         postprocessor.assert_called_once_with(3)
 
@@ -327,14 +326,13 @@ class TestForm(object):
             assert not form.is_valid()
 
         validate.assert_called_once_with()
-        assert form.error == error
+        assert form._error == error
 
-    @mock.patch.object(mod.Field, 'messages')
-    def test_form_error_messages(self, messages, form_cls):
+    def test_form_error_messages(self, form_cls):
         form = form_cls({})
         form.field1.messages = {'foo': 'bar'}
         form.field2.messages = {'bar': 'baz'}
-        assert form.messages == {
+        assert form.field_messages == {
             'field1': {'foo': 'bar'},
             'field2': {'bar': 'baz'},
         }
