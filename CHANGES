@@ -19,3 +19,7 @@
 
 2015-06-15 : v0.1a6 : Minor fixes
   - Allow hidden and email fields to have initial values
+
+2015-06-16 : v0.1a7 : Minor fixes
+  - Fix ValidationError constructor so is_form param is used
+  - Fix IntegerField and FloatField so they allow None values when no value is entered
