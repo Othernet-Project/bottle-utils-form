@@ -28,8 +28,12 @@ class ValidationError(Exception):
         """Calls renderer function"""
         return self.render()
 
-    def render(self):
-        message_text = self.message.format(**self.params)
+    def render(self, message=None):
+        message_text = message or self.message
+        try:
+            message_text = message_text.format(**self.params)
+        except KeyError:
+            pass
         message = html.html_escape(html.to_unicode(message_text))
         if self.is_form:
             return html.UL(html.LI(message, _class=html.FERR_ONE_CLS),
@@ -132,11 +136,10 @@ class DormantField(object):
 class Field(object):
     _id_prefix = 'id_'
     _label_cls = Label
-    messages = {
-        # Translators, used as generic error message in form fields, 'value'
-        # should not be translated.
-        'generic': _('{value} is invalid for this field'),
-    }
+
+    # Translators, used as generic error message in form fields, 'value' should
+    # not be translated.
+    generic_error = _('{value} is invalid for this field')
 
     def __new__(cls, *args, **kwargs):
         if 'name' in kwargs:
@@ -151,12 +154,16 @@ class Field(object):
         self.value = value() if callable(value) else value
         self.processed_value = None
         self.is_value_bound = False
-        self.error = None
+        self._error = None
         self.options = options
 
-        # Update messages
+        self.messages = {}
+
+        # Collect default messages from all validators into the messages dict
         for validator in self.validators:
             self.messages.update(validator.messages)
+
+        # Update the messages dict with any user-supplied messages
         self.messages.update(messages)
 
     def __str__(self):
@@ -175,17 +182,24 @@ class Field(object):
         try:
             self.processed_value = self.parse(self.value)
         except ValueError as exc:
-            self.error = ValidationError('generic', {'value': self.value})
+            self._error = ValidationError('generic', {'value': self.value})
             return False
 
         for validate in self.validators:
             try:
                 validate(self.processed_value)
             except ValidationError as exc:
-                self.error = exc
+                self._error = exc
                 return False
 
         return True
+
+    @property
+    def error(self):
+        if not self._error:
+            return ''
+        message = self.messages.get(self._error.message, self.generic_error)
+        return self._error.render(message)
 
     def parse(self, value):
         """Subclasses should return the value in it's correct type. In case the
@@ -388,28 +402,33 @@ class Form(object):
     _pre_processor_prefix = 'preprocess_'
     _post_processor_prefix = 'postprocess_'
 
-    def __init__(self, data=None):
+    # Translators, used as generic error message in forms, 'value' should not
+    # be translated.
+    generic_error = _('Form contains invalid data.')
+
+    def __init__(self, data=None, messages={}):
         """Initialize forms.
 
         :param data:     Dict-like object containing the form data to be
                          validated, or the initial values of a new form
         """
         self._has_error = False
-        self.error = None
+        self._error = None
         self.processed_data = {}
-
+        self.messages = messages.copy()
         self._bind(data)
 
     def _bind(self, data):
         """Binds field names and values to the field instances."""
+        if data is None:
+            return
         for field_name, dormant_field in self.fields.items():
             field_instance = dormant_field.bind(field_name)
             setattr(self, field_name, field_instance)
-            if data is not None:
-                field_instance.bind_value(data.get(field_name))
+            field_instance.bind_value(data.get(field_name))
 
     @property
-    def messages(self):
+    def field_messages(self):
         """ Dictionary of all field error messages
 
         This value maps the field names to error message maps. Field names are
@@ -429,13 +448,13 @@ class Form(object):
         the form is allowed."""
         types = (Field, DormantField)
         is_form_field = lambda name: isinstance(getattr(self, name), types)
-        ignored_attrs = ['fields', 'messages']
+        ignored_attrs = ['fields', 'field_messages']
         return dict((name, getattr(self, name)) for name in dir(self)
                     if name not in ignored_attrs and is_form_field(name))
 
     def _add_error(self, field, error):
         # if the error is from one of the processors, bind it to the field too
-        field.error = error
+        field._error = error
         self._has_error = True
 
     def _run_processor(self, prefix, field_name, value):
@@ -468,7 +487,7 @@ class Form(object):
                 continue
             # perform individual field validation
             if not field.is_valid():
-                self._add_error(field, field.error)
+                self._has_error = True
                 continue
             # run post-processor on processed value, if defined
             try:
@@ -501,3 +520,10 @@ class Form(object):
         error is found, a `ValidationError` exception should be raised by the
         function."""
         pass
+
+    @property
+    def error(self):
+        if not self._error:
+            return ''
+        message = self.messages.get(self._error.message, self.generic_error)
+        return self._error.render(message)
