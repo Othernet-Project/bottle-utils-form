@@ -170,9 +170,7 @@ class TestBooleanFieldIntegration(object):
 
 class TestSelectFieldIntegration(object):
 
-    @mock.patch.object(mod, '_')
-    def test_is_valid(self, gettext):
-        gettext.side_effect = lambda x: x
+    def test_is_valid(self):
         choices = (
             (None, '---'),
             (1, 'first'),
@@ -318,9 +316,7 @@ class TestForm(object):
         assert form.error == error
 
 
-@mock.patch.object(mod, '_')
-def test_form_integration(gettext):
-    gettext.side_effect = lambda x: x
+def test_form_integration():
 
     class SomeForm(mod.Form):
         name = mod.StringField('Name', validators=[mod.Required()])

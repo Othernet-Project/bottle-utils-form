@@ -30,7 +30,6 @@ setup(
         'python-dateutil>=2.2',
         'bottle-utils-common >=%s, <%s' % (MAJOR, NEXT),
         'bottle-utils-html >=%s, <%s' % (MAJOR, NEXT),
-        'bottle-utils-i18n >=%s, <%s' % (MAJOR, NEXT),
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
