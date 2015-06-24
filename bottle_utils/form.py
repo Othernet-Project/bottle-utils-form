@@ -32,8 +32,12 @@ class ValidationError(Exception):
         """Calls renderer function"""
         return self.render()
 
-    def render(self):
-        message_text = self.message.format(**self.params)
+    def render(self, message=None):
+        message_text = message or self.message
+        try:
+            message_text = message_text.format(**self.params)
+        except KeyError:
+            pass
         message = html.html_escape(html.to_unicode(message_text))
         if self.is_form:
             return html.UL(html.LI(message, _class=html.FERR_ONE_CLS),
@@ -63,6 +67,10 @@ class Label(object):
 
 
 class Validator(object):
+    messages = {}
+
+    def __init__(self, messages={}):
+        self.messages.update(messages)
 
     def __call__(self, data):
         self.validate(data)
@@ -74,52 +82,49 @@ class Validator(object):
 
 
 class Required(Validator):
-
-    def __init__(self, message=None):
-        self.message = message or _("This field is required.")
+    messages = {
+        'required': _('This field is required'),
+    }
 
     def validate(self, data):
         if not data or isinstance(data, basestring) and not data.strip():
-            raise ValidationError(self.message, {})
+            # Translator, represents empty field's value
+            raise ValidationError('required', {'value': _('(empty)')})
 
 
 class DateValidator(Validator):
-
-    def __init__(self, message=None):
-        self.message = message
+    messages = {
+        'date': _('{value} does not look like a valid date'),
+    }
 
     def validate(self, value):
         try:
             return dateutil.parser.parse(value)
-        except ValueError as exc:
-            msg = self.message or _("Invalid date: {0}")
-            raise ValidationError(msg.format(exc), {'value': value})
-        except TypeError as exc:
-            msg = self.message or _("Invalid input.")
-            raise ValidationError(msg, {'value': value})
+        except (TypeError, ValueError) as exc:
+            raise ValidationError('date', {'value': value, 'exc': str(exc)})
 
 
 class InRangeValidator(Validator):
+    messages = {
+        'min_val': _('{value} is too small'),
+        'max_val': _('{value} is too large'),
+    }
 
-    def __init__(self, min_value=None, max_value=None, message=None):
+    def __init__(self, min_value=None, max_value=None, **kwargs):
         self.min_value = min_value
         self.max_value = max_value
-        self.message = message
+        super(self, InRangeValidator).__init__(**kwargs)
 
     def validate(self, value):
         try:
             if self.min_value is not None and self.min_value > value:
-                msg = self.message or _("Input value is too small.")
-                msg = msg.format(min=self.min_value, max=self.max_value)
-                raise ValidationError(msg, {'value': value})
+                raise ValidationError(
+                    'min_val', {'value': value, 'min': self.min_value})
             if self.max_value is not None and self.max_value < value:
-                msg = self.message or _("Input value is too large.")
-                msg = msg.format(min=self.min_value, max=self.max_value)
-                raise ValidationError(msg, {'value': value})
+                raise ValidationError(
+                    'max_val', {'value': value, 'max': self.max_value})
         except Exception:
-            msg = self.message or _("Invalid input.")
-            msg = msg.format(min=self.min_value, max=self.max_value)
-            raise ValidationError(msg, {'value': value})
+            raise ValidationError('generic', {'value': value})
 
 
 class DormantField(object):
@@ -137,21 +142,34 @@ class Field(object):
     _id_prefix = 'id_'
     _label_cls = Label
 
+    # Translators, used as generic error message in form fields, 'value' should
+    # not be translated.
+    generic_error = _('Invalid value for this field')
+
     def __new__(cls, *args, **kwargs):
         if 'name' in kwargs:
             return super(Field, cls).__new__(cls)
         return DormantField(cls, args, kwargs)
 
     def __init__(self, label=None, validators=None, value=None, name=None,
-                 **options):
+                 messages={}, **options):
         self.name = name
         self.label = self._label_cls(label, name)
         self.validators = validators or []
         self.value = value() if callable(value) else value
         self.processed_value = None
         self.is_value_bound = False
-        self.error = None
+        self._error = None
         self.options = options
+
+        self.messages = {}
+
+        # Collect default messages from all validators into the messages dict
+        for validator in self.validators:
+            self.messages.update(validator.messages)
+
+        # Update the messages dict with any user-supplied messages
+        self.messages.update(messages)
 
     def __str__(self):
         """Calls renderer function"""
@@ -169,17 +187,24 @@ class Field(object):
         try:
             self.processed_value = self.parse(self.value)
         except ValueError as exc:
-            self.error = ValidationError(str(exc), {'value': self.value})
+            self._error = ValidationError('generic', {'value': self.value})
             return False
 
         for validate in self.validators:
             try:
                 validate(self.processed_value)
             except ValidationError as exc:
-                self.error = exc
+                self._error = exc
                 return False
 
         return True
+
+    @property
+    def error(self):
+        if not self._error:
+            return ''
+        message = self.messages.get(self._error.message, self.generic_error)
+        return self._error.render(message)
 
     def parse(self, value):
         """Subclasses should return the value in it's correct type. In case the
@@ -388,16 +413,20 @@ class Form(object):
     _pre_processor_prefix = 'preprocess_'
     _post_processor_prefix = 'postprocess_'
 
-    def __init__(self, data=None):
+    # Translators, used as generic error message in forms, 'value' should not
+    # be translated.
+    generic_error = _('Form contains invalid data.')
+
+    def __init__(self, data=None, messages={}):
         """Initialize forms.
 
         :param data:     Dict-like object containing the form data to be
                          validated, or the initial values of a new form
         """
         self._has_error = False
-        self.error = None
+        self._error = None
         self.processed_data = {}
-
+        self.messages = messages.copy()
         self._bind(data)
 
     def _bind(self, data):
@@ -409,18 +438,33 @@ class Form(object):
                 field_instance.bind_value(data.get(field_name))
 
     @property
+    def field_messages(self):
+        """ Dictionary of all field error messages
+
+        This value maps the field names to error message maps. Field names are
+        mapped to fields' messages property, which maps error type to actual
+        message. This dictionary can also be used to modify the messages
+        because message mappings are not copied.
+        """
+        messages = {}
+        for field_name, field in self.fields.items():
+            messages[field_name] = field.messages
+        return messages
+
+    @property
     def fields(self):
         """Returns a dictionary of all the fields found on the form instance.
         The return value is never cached so dynamically adding new fields to
         the form is allowed."""
         types = (Field, DormantField)
         is_form_field = lambda name: isinstance(getattr(self, name), types)
+        ignored_attrs = ['fields', 'field_messages']
         return dict((name, getattr(self, name)) for name in dir(self)
-                    if name != 'fields' and is_form_field(name))
+                    if name not in ignored_attrs and is_form_field(name))
 
     def _add_error(self, field, error):
         # if the error is from one of the processors, bind it to the field too
-        field.error = error
+        field._error = error
         self._has_error = True
 
     def _run_processor(self, prefix, field_name, value):
@@ -453,7 +497,7 @@ class Form(object):
                 continue
             # perform individual field validation
             if not field.is_valid():
-                self._add_error(field, field.error)
+                self._has_error = True
                 continue
             # run post-processor on processed value, if defined
             try:
@@ -486,3 +530,10 @@ class Form(object):
         error is found, a `ValidationError` exception should be raised by the
         function."""
         pass
+
+    @property
+    def error(self):
+        if not self._error:
+            return ''
+        message = self.messages.get(self._error.message, self.generic_error)
+        return self._error.render(message)
