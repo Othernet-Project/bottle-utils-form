@@ -88,7 +88,8 @@ class Required(Validator):
 
     def validate(self, data):
         if not data or isinstance(data, basestring) and not data.strip():
-            raise ValidationError('required', {})
+            # Translator, represents empty field's value
+            raise ValidationError('required', {'value': _('(empty)')})
 
 
 class DateValidator(Validator):
@@ -143,7 +144,7 @@ class Field(object):
 
     # Translators, used as generic error message in form fields, 'value' should
     # not be translated.
-    generic_error = _('{value} is invalid for this field')
+    generic_error = _('Invalid value for this field')
 
     def __new__(cls, *args, **kwargs):
         if 'name' in kwargs:
