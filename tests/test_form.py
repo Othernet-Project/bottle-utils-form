@@ -138,7 +138,6 @@ class TestField(object):
         assert 'bar' in field.messages
 
 
-
 class TestStringField(object):
 
     def test_parse(self):
