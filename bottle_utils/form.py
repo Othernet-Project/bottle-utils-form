@@ -113,7 +113,7 @@ class InRangeValidator(Validator):
     def __init__(self, min_value=None, max_value=None, **kwargs):
         self.min_value = min_value
         self.max_value = max_value
-        super(self, InRangeValidator).__init__(**kwargs)
+        super(InRangeValidator, self).__init__(**kwargs)
 
     def validate(self, value):
         try:
