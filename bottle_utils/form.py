@@ -145,6 +145,7 @@ class Field(object):
     # Translators, used as generic error message in form fields, 'value' should
     # not be translated.
     generic_error = _('Invalid value for this field')
+    messages = {}
 
     def __new__(cls, *args, **kwargs):
         if 'name' in kwargs:
@@ -162,7 +163,7 @@ class Field(object):
         self._error = None
         self.options = options
 
-        self.messages = {}
+        self.messages = self.messages.copy()
 
         # Collect default messages from all validators into the messages dict
         for validator in self.validators:
@@ -416,6 +417,7 @@ class Form(object):
     # Translators, used as generic error message in forms, 'value' should not
     # be translated.
     generic_error = _('Form contains invalid data.')
+    messages = {}
 
     def __init__(self, data=None, messages={}):
         """Initialize forms.
@@ -426,7 +428,8 @@ class Form(object):
         self._has_error = False
         self._error = None
         self.processed_data = {}
-        self.messages = messages.copy()
+        self.messages = self.messages.copy()
+        self.messages.update(messages)
         self._bind(data)
 
     def _bind(self, data):
