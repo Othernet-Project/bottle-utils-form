@@ -60,9 +60,12 @@ class Label(object):
         """Calls renderer function"""
         return self.render()
 
+    def __mod__(self, other):
+        return self.render() % other
+
     def render(self):
         return html.tag('label',
-                        html.html_escape(self.text),
+                        self.text,
                         _for=self.for_element)
 
 
@@ -352,7 +355,7 @@ class BooleanField(Field):
         return self.expected_value in value
 
     def render(self):
-        data = {self.name: self.value} if self.is_value_bound else {}
+        data = {self.name: self.value or []} if self.is_value_bound else {}
         return html.vcheckbox(self.name,
                               self.expected_value,
                               data,
