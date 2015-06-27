@@ -60,9 +60,12 @@ class Label(object):
         """Calls renderer function"""
         return self.render()
 
+    def __mod__(self, other):
+        return self.render() % other
+
     def render(self):
         return html.tag('label',
-                        html.html_escape(self.text),
+                        self.text,
                         _for=self.for_element)
 
 
