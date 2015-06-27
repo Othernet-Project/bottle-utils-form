@@ -155,7 +155,7 @@ class Field(object):
     def __init__(self, label=None, validators=None, value=None, name=None,
                  messages={}, **options):
         self.name = name
-        self.label = self._label_cls(label, name)
+        self.label = self._label_cls(label, self._id_prefix + name)
         self.validators = validators or []
         self.value = value() if callable(value) else value
         self.processed_value = None
