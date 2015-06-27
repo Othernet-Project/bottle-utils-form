@@ -355,7 +355,7 @@ class BooleanField(Field):
         return self.expected_value in value
 
     def render(self):
-        data = {self.name: self.value} if self.is_value_bound else {}
+        data = {self.name: self.value or []} if self.is_value_bound else {}
         return html.vcheckbox(self.name,
                               self.expected_value,
                               data,
