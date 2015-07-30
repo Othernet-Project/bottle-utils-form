@@ -73,6 +73,9 @@ class Validator(object):
     messages = {}
 
     def __init__(self, messages={}):
+        # Make sure the defaults are copied so updating the messages attribute
+        # doesn't affect the class' version or any other instances.
+        self.messages = self.messages.copy()
         self.messages.update(messages)
 
     def __call__(self, data):

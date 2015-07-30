@@ -36,6 +36,17 @@ class TestValidator(object):
         with pytest.raises(mod.ValidationError):
             validator('test')
 
+    def test_validator_message_override(self):
+        """
+        This is a regression test that verifies the message override provided
+        via constructor argument won't affect the other instances or the class
+        itself.
+        """
+        v1 = mod.Validator(messages={'foo': 'bar'})
+        v2 = mod.Validator(messages={'bar': 'baz'})
+        assert v1.messages != v2.messages
+        assert mod.Validator.messages == {}
+
 
 class TestField(object):
 
